@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Open Heart Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a theatre "monitor strip" header whose ECG follows the phase; phase rail left, phase sheet right; ask-the-bot console below. */
+:root{
+  --bg:#eef3f2; --panel:#ffffff; --ink:#14211f; --muted:#5b6e6b; --line:#d3dfdc;
+  --scrub:#1c6b64; --scrub-soft:#dcece9; --signal:#c2362f; --monitor:#0d1715; --trace:#3ee08f;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1312; --panel:#141e1c; --ink:#e3ecea; --muted:#93a6a2; --line:#26342f;
+  --scrub:#5cc0b5; --scrub-soft:#173430; --signal:#ef6a60; --monitor:#050a09; --trace:#3ee08f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1312; --panel:#141e1c; --ink:#e3ecea; --muted:#93a6a2; --line:#26342f;
+  --scrub:#5cc0b5; --scrub-soft:#173430; --signal:#ef6a60; --monitor:#050a09; --trace:#3ee08f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.05;letter-spacing:.01em}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* Monitor */
+.monitor{background:var(--monitor);color:#d8efe6;border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:end}
+.monitor h1{font-size:clamp(34px,6vw,58px);color:#f2fbf7;font-weight:700}
+.monitor p{margin:6px 0 0;max-width:60ch;color:#a9c4bb;font-size:14px}
+.vitals{display:flex;gap:18px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.vital{display:grid;gap:2px;text-align:right}
+.vital b{font-size:26px;font-weight:600;color:var(--trace)}
+.vital.bp b{color:#f3c55a}.vital.t b{color:#7cc7ff}
+.vital span{font-size:10px;letter-spacing:.12em;color:#7f9a92}
+#ecg{grid-column:1/-1;width:100%;height:70px;display:block}
+.state{grid-column:1/-1;font-family:var(--mono);font-size:12px;color:#7f9a92;display:flex;gap:10px;flex-wrap:wrap}
+.state em{font-style:normal;color:var(--trace)}
+
+/* Main */
+.main{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}
+.rail{display:grid;gap:4px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.rail button{all:unset;cursor:pointer;display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--muted)}
+.rail button .n{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+.rail button .t{font-family:var(--display);font-size:19px;font-weight:600;line-height:1.1}
+.rail button:hover{background:var(--scrub-soft);color:var(--ink)}
+.rail button[aria-current="step"]{background:var(--scrub);color:#fff}
+.rail button:focus-visible{outline:2px solid var(--scrub);outline-offset:2px}
+.rail .group{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:12px 10px 2px}
+
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:24px;display:grid;gap:18px;min-width:0}
+.sheet h2{font-size:clamp(30px,4vw,42px)}
+.sheet .lead{font-size:16px;max-width:65ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:99px;background:var(--scrub-soft);color:var(--scrub)}
+.chip.time{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.cols{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:24px}
+ol.steps{margin:0;padding-left:22px;display:grid;gap:10px;max-width:65ch}
+ol.steps li::marker{font-family:var(--mono);color:var(--scrub);font-size:13px}
+.side{display:grid;gap:16px;align-content:start}
+.box h3{font-size:18px;margin-bottom:6px;color:var(--scrub)}
+.box ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.num{font-family:var(--mono);font-size:13px;display:grid;gap:6px;margin:0}
+.num div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line);padding-bottom:4px}
+.num dt{color:var(--muted)}.num dd{margin:0;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.watch{border-left:3px solid var(--signal);padding:8px 12px;background:color-mix(in srgb,var(--signal) 8%,transparent);font-size:14px;border-radius:0 6px 6px 0}
+.watch strong{color:var(--signal)}
+.nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btn{font:600 14px var(--body);padding:9px 16px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--scrub);border-color:var(--scrub);color:#fff}
+.btn:focus-visible{outline:2px solid var(--scrub);outline-offset:2px}
+.btn:disabled{opacity:.4;cursor:default}
+.askthis{display:flex;flex-wrap:wrap;gap:8px}
+.askthis button{font:13px var(--body);padding:6px 11px;border-radius:99px;border:1px dashed var(--scrub);background:transparent;color:var(--scrub);cursor:pointer}
+
+/* Chat */
+.chat{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:grid;grid-template-rows:auto 1fr auto;min-height:420px}
+.chat header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.chat header h2{font-size:28px}
+.log{padding:16px 20px;display:grid;gap:12px;align-content:start;max-height:520px;overflow-y:auto}
+.msg{max-width:72ch;padding:10px 14px;border-radius:10px;white-space:pre-wrap;min-width:0;overflow-wrap:anywhere}
+.msg.bot{background:var(--scrub-soft)}
+.msg.me{background:var(--scrub);color:#fff;justify-self:end}
+.msg.err{background:transparent;border:1px solid var(--signal);color:var(--signal)}
+form{display:flex;gap:8px;padding:12px 20px 16px;border-top:1px solid var(--line)}
+form textarea{flex:1;min-width:0;font:15px var(--body);padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical;min-height:44px}
+form textarea:focus-visible{outline:2px solid var(--scrub)}
+.foot{font-size:12px;color:var(--muted);max-width:80ch}
+
+@media (max-width:860px){
+  .main{grid-template-columns:1fr}
+  .rail{position:static;display:flex;overflow-x:auto;gap:6px;padding-bottom:4px}
+  .rail .group{display:none}
+  .rail button{flex:0 0 auto;grid-template-columns:auto auto}
+  .cols{grid-template-columns:1fr}
+  .monitor{grid-template-columns:1fr}
+  .vitals{justify-content:flex-start}
+  .vital{text-align:left}
+}
+</style>
+
+<div class="wrap">
+  <section class="monitor" aria-label="Case monitor">
+    <div>
+      <div class="eyebrow" style="color:#7f9a92">Case walkthrough · CABG ×3 on cardiopulmonary bypass</div>
+      <h1>Open Heart Walkthrough</h1>
+      <p>A start-to-finish guide to coronary artery bypass grafting, the most common open-heart operation. Step through each phase, then ask the bot anything.</p>
+    </div>
+    <div class="vitals" aria-live="polite">
+      <div class="vital"><b id="vHR">72</b><span>HR bpm</span></div>
+      <div class="vital bp"><b id="vBP">118/70</b><span>ART mmHg</span></div>
+      <div class="vital t"><b id="vT">36.8</b><span>TEMP °C</span></div>
+    </div>
+    <canvas id="ecg" aria-hidden="true"></canvas>
+    <div class="state"><span>Heart: <em id="sHeart">beating</em></span><span>Bypass: <em id="sCPB">off</em></span><span>Phase <em id="sPhase">1</em> of 14</span></div>
+  </section>
+
+  <div class="main">
+    <nav class="rail" id="rail" aria-label="Phases"></nav>
+    <article class="sheet" id="sheet" aria-live="polite"></article>
+  </div>
+
+  <section class="chat" aria-label="Ask the bot">
+    <header>
+      <h2>Ask the surgical bot</h2>
+      <span class="eyebrow" id="chatStatus">Educational explainer</span>
+    </header>
+    <div class="log" id="log">
+      <div class="msg bot">I'm your guide to open-heart surgery. Ask why a step is done, what a term means, what can go wrong, or how recovery goes. I'll keep track of which phase you're viewing.</div>
+    </div>
+    <form id="form">
+      <textarea id="q" rows="1" placeholder="e.g. Why is the heart stopped during grafting?" aria-label="Your question"></textarea>
+      <button class="btn primary" id="send" type="submit">Ask</button>
+    </form>
+  </section>
+
+  <p class="foot">For learning only. Open-heart surgery is performed by a cardiac surgeon, anesthesiologist, perfusionist and nursing team after years of supervised training. Figures shown are typical textbook ranges and vary by institution and patient. If you are facing heart surgery, your surgical team is the right source for your own case.</p>
+</div>
+
+<script>
+const PHASES=[
+ {g:"Before the OR",t:"Work-up & decision",time:"Days–weeks before",heart:"beating",cpb:"off",v:[72,"124/76","36.8"],
+  lead:"The team confirms that surgery is the right treatment and that the patient can tolerate it.",
+  steps:["Coronary angiogram maps which arteries are blocked and where the targets for grafts sit.","Echocardiogram measures pump function (ejection fraction) and checks the valves.","Heart team (surgeon + interventional cardiologist) weighs CABG against stents; multivessel or left-main disease usually favors CABG.","Risk is scored with the STS or EuroSCORE II calculator.","Blood thinners are managed: clopidogrel/ticagrelor typically stopped ~5 days ahead; aspirin often continued."],
+  who:["Cardiologist","Cardiac surgeon","Anesthesia pre-op clinic"],
+  nums:[["Typical CABG mortality","~1–3%"],["Ticagrelor hold","3–5 days"],["Clopidogrel hold","5 days"]],
+  watch:"Carotid disease, kidney function and lung function are screened because they predict stroke and complications.",
+  ask:["Why choose bypass over stents?","What does the STS score measure?"]},
+ {g:"Before the OR",t:"Consent & prep",time:"Day of surgery",heart:"beating",cpb:"off",v:[84,"136/82","36.7"],
+  lead:"The patient is prepared, the site is checked, and the team runs its safety pause.",
+  steps:["Informed consent covers benefits, risks (bleeding, stroke, infection, arrhythmia, death) and alternatives.","Chlorhexidine skin prep; hair clipped, not shaved.","IV antibiotic (usually cefazolin) given within 60 minutes before incision.","Blood is typed and crossmatched; units ready.","WHO surgical safety checklist and team time-out."],
+  who:["Pre-op nurse","Surgeon","Anesthesiologist"],
+  nums:[["Antibiotic window","≤60 min pre-incision"],["Cefazolin dose","2 g IV (3 g if ≥120 kg)"]],
+  watch:"Glucose control around surgery lowers sternal wound infection risk.",
+  ask:["What happens at the time-out?","Why clip instead of shave?"]},
+ {g:"In the OR",t:"Anesthesia & lines",time:"~45 min",heart:"beating",cpb:"off",v:[68,"112/64","36.4"],
+  lead:"The patient is put to sleep and fitted with the monitoring the rest of the operation depends on.",
+  steps:["Radial arterial line placed for beat-to-beat blood pressure.","General anesthesia induced; breathing tube placed.","Central venous line in the internal jugular vein; sometimes a pulmonary artery catheter.","Transesophageal echo (TEE) probe placed to watch the heart in real time.","Urinary catheter and temperature probes inserted."],
+  who:["Cardiac anesthesiologist","Anesthesia tech"],
+  nums:[["Arterial line","Radial, before induction"],["TEE","Baseline function & valves"]],
+  watch:"Induction can drop blood pressure sharply in a weak heart, so drugs are given slowly with vasopressors ready.",
+  ask:["What does TEE show during surgery?","Why put the art line in before sleep?"]},
+ {g:"In the OR",t:"Median sternotomy",time:"~15 min",heart:"beating",cpb:"off",v:[76,"128/72","36.2"],
+  lead:"The breastbone is divided down the middle to expose the heart.",
+  steps:["Skin incision from just below the sternal notch to near the xiphoid.","Electrocautery scores the midline of the sternum.","Lungs briefly deflated; an oscillating sternal saw splits the bone.","Bone edges sealed for bleeding; a sternal retractor spreads the chest.","The pericardium (sac around the heart) is opened and tacked up as a cradle."],
+  who:["Surgeon","First assistant","Scrub nurse"],
+  nums:[["Incision length","~20–25 cm"],["Ventilation","Paused for the saw"]],
+  watch:"In a redo operation the heart may stick to the back of the sternum, so an oscillating saw and careful dissection are used.",
+  ask:["Why deflate the lungs for the saw?","How does the sternum heal?"]},
+ {g:"In the OR",t:"Harvest the conduits",time:"~30–45 min",heart:"beating",cpb:"off",v:[78,"122/70","36.1"],
+  lead:"The vessels that will become the bypass grafts are collected, often in parallel with the chest opening.",
+  steps:["Left internal mammary artery (LIMA) taken down from the inside of the chest wall, kept attached at its origin.","Saphenous vein harvested from the leg, often endoscopically, by an assistant.","Some surgeons use the radial artery as an additional arterial graft.","Side branches are clipped; the conduits are flushed and checked for leaks.","LIMA wrapped in papaverine-soaked gauze to prevent spasm."],
+  who:["Surgeon (LIMA)","Physician assistant (vein)"],
+  nums:[["LIMA → LAD 10-yr patency","~90%+"],["Vein graft 10-yr patency","~50–60%"]],
+  watch:"The LIMA to the LAD is the single most important graft for long-term survival.",
+  ask:["Why is the LIMA graft so durable?","Can you live without the saphenous vein?"]},
+ {g:"In the OR",t:"Heparin & cannulation",time:"~15 min",heart:"beating",cpb:"off",v:[80,"104/60","36.0"],
+  lead:"Blood is made unclottable and tubes are placed so a machine can take over.",
+  steps:["Full-dose heparin given; activated clotting time (ACT) checked.","Purse-string sutures placed in the ascending aorta and right atrium.","Aortic cannula inserted (blood returns to the body here).","Venous cannula in the right atrium drains blood to the machine.","Cardioplegia line placed in the aortic root; sometimes a retrograde line in the coronary sinus."],
+  who:["Surgeon","Perfusionist","Anesthesiologist"],
+  nums:[["Heparin","300–400 U/kg"],["Target ACT","> 480 s"]],
+  watch:"Aortic calcification is checked with epiaortic ultrasound because cannulating a diseased aorta can release debris and cause stroke.",
+  ask:["What does the ACT number mean?","Why cannulate the aorta?"]},
+ {g:"On bypass",t:"Go on bypass",time:"Minutes",heart:"beating",cpb:"on",v:[60,"MAP 65","34.0"],
+  lead:"The heart-lung machine takes over circulation and breathing.",
+  steps:["Perfusionist opens the venous line; blood drains by gravity to a reservoir.","An oxygenator adds oxygen, removes CO₂ and controls temperature.","A roller or centrifugal pump returns blood to the aorta.","Ventilator turned off once full flow is reached.","Mild cooling begins."],
+  who:["Perfusionist","Surgeon","Anesthesiologist"],
+  nums:[["Pump flow","2.2–2.4 L/min/m²"],["MAP on bypass","50–80 mmHg"],["Temperature","32–34 °C"]],
+  watch:"Pulsatile pressure disappears on full bypass; the art-line trace goes flat while flow continues.",
+  ask:["How does an oxygenator work?","Why cool the patient?"]},
+ {g:"On bypass",t:"Cross-clamp & arrest",time:"~2 min",heart:"arrested",cpb:"on",v:[0,"MAP 62","33.0"],
+  lead:"The aorta is clamped and the heart is stopped so the surgeon can sew on a still, bloodless field.",
+  steps:["Aortic cross-clamp applied between the cannula and the coronary arteries.","Cold, high-potassium cardioplegia infused into the aortic root.","The heart stops in diastole within about a minute; ECG goes flat.","Topical cold saline or slush may cool the surface.","Cardioplegia repeated every 15–20 minutes (or a single dose of del Nido)."],
+  who:["Surgeon","Perfusionist"],
+  nums:[["Blood:crystalloid ratio","4:1 typical"],["Redose interval","15–20 min"],["del Nido","Single dose up to ~60–90 min"]],
+  watch:"Cross-clamp time is tracked closely; longer ischemic time raises the risk of a weak heart afterwards.",
+  ask:["How does potassium stop the heart?","What is cross-clamp time?"]},
+ {g:"On bypass",t:"Sew the grafts",time:"~45–75 min",heart:"arrested",cpb:"on",v:[0,"MAP 64","33.5"],
+  lead:"Each graft is sewn past the blockage. Distal ends first, LIMA last.",
+  steps:["Target artery identified and opened with a small arteriotomy (~4–6 mm).","Vein graft sewn end-to-side to the target with fine running polypropylene suture (7-0 or 8-0) under loupes.","Remaining distal anastomoses done, usually right/circumflex territory first.","LIMA sewn to the LAD last so it isn't disturbed while the heart is lifted.","Proximal vein ends attached to the aorta, either under the cross-clamp or with a side-biting clamp."],
+  who:["Surgeon","First assistant"],
+  nums:[["Suture","7-0 / 8-0 polypropylene"],["Magnification","2.5–4.5× loupes"]],
+  watch:"Each graft's flow is checked, often with transit-time flowmetry, before leaving the OR.",
+  ask:["Why sew the LIMA last?","What is an anastomosis?"]},
+ {g:"Coming off",t:"Rewarm & de-air",time:"~15 min",heart:"fibrillating",cpb:"on",v:[0,"MAP 70","36.5"],
+  lead:"The heart is reperfused, warmed and emptied of air before it is asked to work again.",
+  steps:["Perfusionist rewarms the blood, no faster than the safe gradient.","Air is vented from the heart and aortic root while the anesthesiologist inflates the lungs.","Cross-clamp removed; warm blood flows into the coronaries.","The heart often fibrillates, then regains rhythm on its own or with an internal shock.","Temporary pacing wires sewn onto the heart surface."],
+  who:["Perfusionist","Surgeon","Anesthesiologist (TEE)"],
+  nums:[["Target temp","~36–37 °C"],["Internal shock","10–20 J"]],
+  watch:"TEE is used to confirm there is no trapped air, which can travel to the brain or a coronary artery.",
+  ask:["Why does the heart fibrillate after the clamp?","What are pacing wires for?"]},
+ {g:"Coming off",t:"Wean from bypass",time:"~10 min",heart:"beating",cpb:"weaning",v:[90,"102/58","36.8"],
+  lead:"The heart takes back the work of circulation while the machine is slowly turned down.",
+  steps:["Ventilation resumed; the checklist confirms temperature, rhythm, labs and calcium.","Perfusionist partially clamps the venous line so the heart fills and ejects.","Flow reduced stepwise while pressures and TEE are watched.","Inotropes (e.g. epinephrine, milrinone) or vasopressors added if needed.","Off bypass: pump stopped."],
+  who:["Anesthesiologist","Perfusionist","Surgeon"],
+  nums:[["Paced rate","80–90 bpm common"],["Hb before wean","~8 g/dL+"]],
+  watch:"If the heart can't wean, the team returns to bypass and considers an intra-aortic balloon pump or ECMO.",
+  ask:["What if the heart won't take over?","What is an inotrope?"]},
+ {g:"Coming off",t:"Protamine & decannulate",time:"~15 min",heart:"beating",cpb:"off",v:[88,"110/62","36.9"],
+  lead:"Heparin is reversed and the tubes come out.",
+  steps:["Venous cannula removed first.","Protamine given slowly to neutralize heparin; ACT returns to baseline.","Remaining pump blood is given back through the aortic cannula.","Aortic cannula removed and purse-string tied.","Cell-saver blood processed and returned."],
+  who:["Anesthesiologist","Surgeon","Perfusionist"],
+  nums:[["Protamine","~1 mg per 100 U heparin"],["Target","ACT back to baseline"]],
+  watch:"Protamine can cause low blood pressure or, rarely, a severe reaction with lung vessel constriction, so it is given slowly.",
+  ask:["How does protamine reverse heparin?","What is a cell saver?"]},
+ {g:"Coming off",t:"Hemostasis & closure",time:"~30–45 min",heart:"beating",cpb:"off",v:[86,"116/64","36.9"],
+  lead:"Every bleeding point is controlled and the chest is closed.",
+  steps:["Graft sites, cannulation sites and the LIMA bed inspected for bleeding.","Chest tubes placed in the mediastinum and any opened pleural space.","Sternum rewired with 6–8 stainless steel wires.","Fascia, subcutaneous tissue and skin closed in layers.","Final sponge, needle and instrument count."],
+  who:["Surgeon","Scrub nurse","Circulating nurse"],
+  nums:[["Sternal wires","6–8"],["Chest tubes","2–3 typical"]],
+  watch:"Bleeding above roughly 200 mL/hour for several hours afterwards may mean a return to the OR.",
+  ask:["Why stainless steel wires?","What do chest tubes drain?"]},
+ {g:"After",t:"ICU & recovery",time:"Days–weeks",heart:"beating",cpb:"off",v:[82,"122/70","37.0"],
+  lead:"The patient wakes, breathes on their own and begins to recover.",
+  steps:["Transported to ICU still intubated; extubated typically within 6 hours.","Chest tube output, rhythm, kidney function and pain monitored.","Out of bed the next day; walking within 1–2 days.","Chest tubes and pacing wires removed over days 2–3.","Home around day 4–6; sternal precautions ~6–8 weeks, then cardiac rehab."],
+  who:["ICU team","Cardiac nurses","Physical therapy","Cardiac rehab"],
+  nums:[["Hospital stay","~5–7 days"],["Post-op AFib","~20–40%"],["Lifting limit","~5–10 lb for 6–8 wk"]],
+  watch:"Atrial fibrillation is the most common complication, usually on day 2–3, and is usually temporary.",
+  ask:["Why is AFib so common after surgery?","What are sternal precautions?"]}
+];
+
+let cur=0;
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function renderRail(){
+  let g="",h="";
+  PHASES.forEach((p,i)=>{
+    if(p.g!==g){g=p.g;h+=`<div class="group">${esc(g)}</div>`}
+    h+=`<button type="button" data-i="${i}" ${i===cur?'aria-current="step"':''}><span class="n">${String(i+1).padStart(2,"0")}</span><span class="t">${esc(p.t)}</span></button>`;
+  });
+  $("rail").innerHTML=h;
+  $("rail").querySelectorAll("button").forEach(b=>b.onclick=()=>go(+b.dataset.i));
+}
+function renderSheet(){
+  const p=PHASES[cur];
+  $("sheet").innerHTML=`
+   <div class="eyebrow">Phase ${cur+1} of ${PHASES.length} · ${esc(p.g)}</div>
+   <h2>${esc(p.t)}</h2>
+   <div class="meta"><span class="chip time">${esc(p.time)}</span>${p.who.map(w=>`<span class="chip">${esc(w)}</span>`).join("")}</div>
+   <p class="lead">${esc(p.lead)}</p>
+   <div class="cols">
+     <ol class="steps">${p.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+     <div class="side">
+       <div class="box"><h3>Key numbers</h3><dl class="num">${p.nums.map(n=>`<div><dt>${esc(n[0])}</dt><dd>${esc(n[1])}</dd></div>`).join("")}</dl></div>
+       <div class="watch"><strong>Watch for.</strong> ${esc(p.watch)}</div>
+     </div>
+   </div>
+   <div class="askthis">${p.ask.map(a=>`<button type="button">${esc(a)}</button>`).join("")}</div>
+   <div class="nav">
+     <button class="btn" id="prev" ${cur===0?"disabled":""}>← Previous</button>
+     <button class="btn primary" id="next" ${cur===PHASES.length-1?"disabled":""}>Next phase →</button>
+   </div>`;
+  $("prev").onclick=()=>go(cur-1);$("next").onclick=()=>go(cur+1);
+  $("sheet").querySelectorAll(".askthis button").forEach(b=>b.onclick=()=>{$("q").value=b.textContent;$("q").focus();ask()});
+  $("vHR").textContent=p.heart==="beating"?p.v[0]:"---";
+  $("vBP").textContent=p.v[1];$("vT").textContent=p.v[2];
+  $("sHeart").textContent=p.heart;$("sCPB").textContent=p.cpb;$("sPhase").textContent=cur+1;
+}
+function go(i){if(i<0||i>=PHASES.length)return;cur=i;renderRail();renderSheet();try{localStorage.setItem("ohw-phase",i)}catch(e){}}
+try{const s=+localStorage.getItem("ohw-phase");if(s>=0&&s<PHASES.length)cur=s}catch(e){}
+renderRail();renderSheet();
+
+/* ECG */
+const cv=$("ecg"),cx=cv.getContext("2d");let x=0,lastY=null,t0=0;
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function size(){const r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x=0;lastY=null}
+function beat(ph){ // ph 0..1 within a cardiac cycle
+  if(ph<.1)return Math.sin(ph/.1*Math.PI)*.12;
+  if(ph<.16)return 0; if(ph<.18)return -.15; if(ph<.21)return 1; if(ph<.24)return -.3;
+  if(ph<.4)return 0; if(ph<.55)return Math.sin((ph-.4)/.15*Math.PI)*.25; return 0;
+}
+function sig(t){
+  const st=PHASES[cur].heart,hr=PHASES[cur].v[0]||60;
+  if(st==="arrested")return (Math.random()-.5)*.02;
+  if(st==="fibrillating")return Math.sin(t*31)*.18+Math.sin(t*47+1)*.14+(Math.random()-.5)*.1;
+  return beat((t*hr/60)%1);
+}
+function draw(ts){
+  const w=cv.clientWidth,h=cv.clientHeight;
+  const dt=Math.min(.05,(ts-t0)/1000||0);t0=ts;
+  const step=dt*120;
+  for(let k=0;k<step;k+=1){
+    const t=(ts/1000)-(step-k)/120;
+    const y=h*.62-sig(t)*h*.5;
+    cx.clearRect(x+1,0,14,h);
+    cx.strokeStyle="#3ee08f";cx.lineWidth=1.6;cx.beginPath();
+    cx.moveTo(x,lastY??y);cx.lineTo(x+1,y);cx.stroke();
+    lastY=y;x+=1;if(x>w){x=0;lastY=null}
+  }
+  requestAnimationFrame(draw);
+}
+function still(){const w=cv.clientWidth,h=cv.clientHeight;cx.clearRect(0,0,w,h);cx.strokeStyle="#3ee08f";cx.lineWidth=1.6;cx.beginPath();for(let i=0;i<w;i++){const y=h*.62-beat((i/140)%1)*h*.5;i?cx.lineTo(i,y):cx.moveTo(i,y)}cx.stroke()}
+size();addEventListener("resize",()=>{size();if(reduce)still()});
+if(reduce)still();else requestAnimationFrame(draw);
+
+/* Chat */
+const history=[];let sample=null,busy=false;
+const SYS=`You are "Open Heart Walkthrough", an educational explainer of open-heart surgery, focused on coronary artery bypass grafting (CABG) on cardiopulmonary bypass. Audience: curious learners, students, patients and families. Explain clearly and accurately: what each step is, why it's done, who does it, typical numbers, risks and recovery. Use plain language first, then the technical term. Keep answers to about 120–220 words unless asked for more. Use short paragraphs or a brief list; no markdown headings. Frame typical values as textbook ranges that vary by institution. You teach how the operation works; you are not a substitute for supervised surgical training, and for a person's own diagnosis or treatment you point them to their surgical team. If someone describes an emergency, tell them to call emergency services.`;
+function add(role,text){const d=document.createElement("div");d.className="msg "+role;d.textContent=text;$("log").appendChild(d);$("log").scrollTop=$("log").scrollHeight;return d}
+(async()=>{try{sample=await window.claude?.use?.("sample")}catch(e){sample=null}
+  if(!sample){$("chatStatus").textContent="Chat unavailable in this view";}})();
+async function ask(){
+  const q=$("q").value.trim();if(!q||busy)return;
+  if(!sample){add("err","The chat needs the Claude viewer to answer questions. Open this page on claude.ai to use it. The phase guide above works everywhere.");return}
+  busy=true;$("send").disabled=true;$("q").value="";add("me",q);
+  const p=PHASES[cur];
+  const ctx=`[Viewer is on phase ${cur+1}/${PHASES.length}: "${p.t}". Phase summary: ${p.lead} Steps: ${p.steps.join(" ")}]\n\n`;
+  const msgs=[{role:"user",content:SYS+"\n\nReply 'Ready.'"},{role:"assistant",content:"Ready."},...history,{role:"user",content:ctx+q}];
+  const bubble=add("bot","Thinking…");
+  try{
+    const r=await sample(msgs,{cache:false,onText:({text})=>{bubble.textContent=text;$("log").scrollTop=$("log").scrollHeight}});
+    bubble.textContent=r.text;history.push({role:"user",content:ctx+q},{role:"assistant",content:r.text});
+    if(history.length>16)history.splice(0,2);
+  }catch(e){
+    bubble.className="msg err";
+    bubble.textContent=e?.code==="not_granted"?"Chat permission was declined, so the bot can't answer. You can allow it from this page's Permissions menu.":e?.code==="rate_limited"?"Too many questions in a short time. Wait a minute and ask again.":"The answer didn't come through. Try asking again.";
+  }finally{busy=false;$("send").disabled=false}
+}
+$("form").addEventListener("submit",e=>{e.preventDefault();ask()});
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask()}});
+</script>
+
+</body>
+</html>
