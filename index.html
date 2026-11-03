@@ -44,6 +44,8 @@ h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.05;
 #ecg{grid-column:1/-1;width:100%;height:70px;display:block}
 .state{grid-column:1/-1;font-family:var(--mono);font-size:12px;color:#7f9a92;display:flex;gap:10px;flex-wrap:wrap}
 .state em{font-style:normal;color:var(--trace)}
+.state button{all:unset;cursor:pointer;margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--trace);border:1px solid #2a4a3f;border-radius:4px;padding:1px 8px}
+.state button:focus-visible{outline:2px solid var(--trace);outline-offset:2px}
 
 /* Main */
 .main{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}
@@ -112,7 +114,7 @@ form textarea:focus-visible{outline:2px solid var(--scrub)}
     <div>
       <div class="eyebrow" style="color:#7f9a92">Case walkthrough · CABG ×3 on cardiopulmonary bypass</div>
       <h1>Open Heart Walkthrough</h1>
-      <p>A start-to-finish guide to coronary artery bypass grafting, the most common open-heart operation. Step through each phase, then ask the bot anything.</p>
+      <p>A start-to-finish guide to coronary artery bypass grafting, the most common open-heart operation. Step through each phase, from the first scan to going home.</p>
     </div>
     <div class="vitals" aria-live="polite">
       <div class="vital"><b id="vHR">72</b><span>HR bpm</span></div>
@@ -120,7 +122,7 @@ form textarea:focus-visible{outline:2px solid var(--scrub)}
       <div class="vital t"><b id="vT">36.8</b><span>TEMP °C</span></div>
     </div>
     <canvas id="ecg" aria-hidden="true"></canvas>
-    <div class="state"><span>Heart: <em id="sHeart">beating</em></span><span>Bypass: <em id="sCPB">off</em></span><span>Phase <em id="sPhase">1</em> of 14</span></div>
+    <div class="state"><span>Heart: <em id="sHeart">beating</em></span><span>Bypass: <em id="sCPB">off</em></span><span>Phase <em id="sPhase">1</em> of 14</span><button type="button" id="ecgToggle" aria-pressed="true">Pause trace</button></div>
   </section>
 
   <div class="main">
@@ -128,7 +130,7 @@ form textarea:focus-visible{outline:2px solid var(--scrub)}
     <article class="sheet" id="sheet" aria-live="polite"></article>
   </div>
 
-  <section class="chat" aria-label="Ask the bot">
+  <section class="chat" id="chat" aria-label="Ask the bot" hidden>
     <header>
       <h2>Ask the surgical bot</h2>
       <span class="eyebrow" id="chatStatus">Educational explainer</span>
@@ -247,7 +249,7 @@ const PHASES=[
   ask:["Why is AFib so common after surgery?","What are sternal precautions?"]}
 ];
 
-let cur=0;
+let cur=0,sample=null;
 const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
@@ -274,7 +276,7 @@ function renderSheet(){
        <div class="watch"><strong>Watch for.</strong> ${esc(p.watch)}</div>
      </div>
    </div>
-   <div class="askthis">${p.ask.map(a=>`<button type="button">${esc(a)}</button>`).join("")}</div>
+   <div class="askthis" ${sample?"":"hidden"}>${p.ask.map(a=>`<button type="button">${esc(a)}</button>`).join("")}</div>
    <div class="nav">
      <button class="btn" id="prev" ${cur===0?"disabled":""}>← Previous</button>
      <button class="btn primary" id="next" ${cur===PHASES.length-1?"disabled":""}>Next phase →</button>
@@ -290,7 +292,7 @@ try{const s=+localStorage.getItem("ohw-phase");if(s>=0&&s<PHASES.length)cur=s}ca
 renderRail();renderSheet();
 
 /* ECG */
-const cv=$("ecg"),cx=cv.getContext("2d");let x=0,lastY=null,t0=0;
+const cv=$("ecg"),cx=cv.getContext("2d");let x=0,lastY=null,t0=0,running=false,raf=0;
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 function size(){const r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x=0;lastY=null}
 function beat(ph){ // ph 0..1 within a cardiac cycle
@@ -316,18 +318,20 @@ function draw(ts){
     cx.moveTo(x,lastY??y);cx.lineTo(x+1,y);cx.stroke();
     lastY=y;x+=1;if(x>w){x=0;lastY=null}
   }
-  requestAnimationFrame(draw);
+  if(running)raf=requestAnimationFrame(draw);
 }
+function setRun(on){running=on;cancelAnimationFrame(raf);t0=0;const b=$("ecgToggle");b.textContent=on?"Pause trace":"Play trace";b.setAttribute("aria-pressed",on);if(on)raf=requestAnimationFrame(ts=>{t0=ts;draw(ts)});else still()}
+$("ecgToggle").onclick=()=>setRun(!running);
 function still(){const w=cv.clientWidth,h=cv.clientHeight;cx.clearRect(0,0,w,h);cx.strokeStyle="#3ee08f";cx.lineWidth=1.6;cx.beginPath();for(let i=0;i<w;i++){const y=h*.62-beat((i/140)%1)*h*.5;i?cx.lineTo(i,y):cx.moveTo(i,y)}cx.stroke()}
-size();addEventListener("resize",()=>{size();if(reduce)still()});
-if(reduce)still();else requestAnimationFrame(draw);
+size();new ResizeObserver(()=>{size();if(!running)still()}).observe(cv);
+setRun(!reduce);
 
 /* Chat */
-const history=[];let sample=null,busy=false;
+const history=[];let busy=false;
 const SYS=`You are "Open Heart Walkthrough", an educational explainer of open-heart surgery, focused on coronary artery bypass grafting (CABG) on cardiopulmonary bypass. Audience: curious learners, students, patients and families. Explain clearly and accurately: what each step is, why it's done, who does it, typical numbers, risks and recovery. Use plain language first, then the technical term. Keep answers to about 120–220 words unless asked for more. Use short paragraphs or a brief list; no markdown headings. Frame typical values as textbook ranges that vary by institution. You teach how the operation works; you are not a substitute for supervised surgical training, and for a person's own diagnosis or treatment you point them to their surgical team. If someone describes an emergency, tell them to call emergency services.`;
 function add(role,text){const d=document.createElement("div");d.className="msg "+role;d.textContent=text;$("log").appendChild(d);$("log").scrollTop=$("log").scrollHeight;return d}
 (async()=>{try{sample=await window.claude?.use?.("sample")}catch(e){sample=null}
-  if(!sample){$("chatStatus").textContent="Chat unavailable in this view";}})();
+  if(sample){$("chat").hidden=false;renderSheet()}})();
 async function ask(){
   const q=$("q").value.trim();if(!q||busy)return;
   if(!sample){add("err","The chat needs the Claude viewer to answer questions. Open this page on claude.ai to use it. The phase guide above works everywhere.");return}

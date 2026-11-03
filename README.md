@@ -12,7 +12,7 @@ Open `index.html` in a browser, or turn on GitHub Pages (Settings → Pages → 
 
 ## About the chat bot
 
-The "Ask the surgical bot" panel uses Claude's artifact runtime, so it only answers when the page is opened on claude.ai. On GitHub Pages or a local file, the phase guide works fully and the chat shows a notice instead.
+The "Ask the surgical bot" panel uses Claude's artifact runtime, so it only appears when the page is opened on claude.ai. On GitHub Pages or a local file, the chat panel is hidden and the phase guide and monitor work on their own.
 
 ## Disclaimer
 
