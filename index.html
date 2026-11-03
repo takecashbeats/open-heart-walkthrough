@@ -9,15 +9,15 @@
 <title>Open Heart Walkthrough</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <style>
 /* Layout: a theatre "monitor strip" header whose ECG follows the phase; phase rail left, phase sheet right; ask-the-bot console below. */
 :root{
   --bg:#eef3f2; --panel:#ffffff; --ink:#14211f; --muted:#5b6e6b; --line:#d3dfdc;
   --scrub:#1c6b64; --scrub-soft:#dcece9; --signal:#c2362f; --monitor:#0d1715; --trace:#3ee08f;
-  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
-  --body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --display:"Barlow Condensed","Noto Sans JP","Arial Narrow",system-ui,sans-serif;
+  --body:"Public Sans","Noto Sans JP",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono","Noto Sans JP",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0c1312; --panel:#141e1c; --ink:#e3ecea; --muted:#93a6a2; --line:#26342f;
@@ -46,6 +46,13 @@ h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.05;
 .state em{font-style:normal;color:var(--trace)}
 .state button{all:unset;cursor:pointer;margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--trace);border:1px solid #2a4a3f;border-radius:4px;padding:1px 8px}
 .state button:focus-visible{outline:2px solid var(--trace);outline-offset:2px}
+.topbar{grid-column:1/-1;display:flex;justify-content:flex-end}
+.lang{display:inline-flex;border:1px solid #2a4a3f;border-radius:99px;padding:2px;gap:2px}
+.lang button{all:unset;cursor:pointer;font-family:var(--mono);font-size:12px;color:#a9c4bb;padding:3px 12px;border-radius:99px}
+.lang button[aria-pressed="true"]{background:var(--trace);color:#06231a;font-weight:600}
+.lang button:focus-visible{outline:2px solid var(--trace);outline-offset:2px}
+:lang(ja) .eyebrow,:lang(ja) .rail .group{letter-spacing:.06em}
+:lang(ja) h1,:lang(ja) h2,:lang(ja) h3{letter-spacing:0;line-height:1.25}
 
 /* Main */
 .main{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}
@@ -110,11 +117,12 @@ form textarea:focus-visible{outline:2px solid var(--scrub)}
 </style>
 
 <div class="wrap">
-  <section class="monitor" aria-label="Case monitor">
+  <section class="monitor" id="monitor" aria-label="Case monitor">
+    <div class="topbar"><div class="lang" role="group" id="langGroup" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="ja" aria-pressed="false" lang="ja">日本語</button></div></div>
     <div>
-      <div class="eyebrow" style="color:#7f9a92">Case walkthrough · CABG ×3 on cardiopulmonary bypass</div>
-      <h1>Open Heart Walkthrough</h1>
-      <p>A start-to-finish guide to coronary artery bypass grafting, the most common open-heart operation. Step through each phase, from the first scan to going home.</p>
+      <div class="eyebrow" style="color:#7f9a92" data-i18n="eyebrow">Case walkthrough · CABG ×3 on cardiopulmonary bypass</div>
+      <h1 data-i18n="title">Open Heart Walkthrough</h1>
+      <p data-i18n="intro">A start-to-finish guide to coronary artery bypass grafting, the most common open-heart operation. Step through each phase, from the first scan to going home.</p>
     </div>
     <div class="vitals" aria-live="polite">
       <div class="vital"><b id="vHR">72</b><span>HR bpm</span></div>
@@ -122,7 +130,7 @@ form textarea:focus-visible{outline:2px solid var(--scrub)}
       <div class="vital t"><b id="vT">36.8</b><span>TEMP °C</span></div>
     </div>
     <canvas id="ecg" aria-hidden="true"></canvas>
-    <div class="state"><span>Heart: <em id="sHeart">beating</em></span><span>Bypass: <em id="sCPB">off</em></span><span>Phase <em id="sPhase">1</em> of 14</span><button type="button" id="ecgToggle" aria-pressed="true">Pause trace</button></div>
+    <div class="state"><span><span data-i18n="heart">Heart:</span> <em id="sHeart">beating</em></span><span><span data-i18n="bypass">Bypass:</span> <em id="sCPB">off</em></span><span id="sPhase">Phase 1 of 14</span><button type="button" id="ecgToggle" aria-pressed="true">Pause trace</button></div>
   </section>
 
   <div class="main">
@@ -132,19 +140,19 @@ form textarea:focus-visible{outline:2px solid var(--scrub)}
 
   <section class="chat" id="chat" aria-label="Ask the bot" hidden>
     <header>
-      <h2>Ask the surgical bot</h2>
-      <span class="eyebrow" id="chatStatus">Educational explainer</span>
+      <h2 data-i18n="chatTitle">Ask the surgical bot</h2>
+      <span class="eyebrow" id="chatStatus" data-i18n="chatStatus">Educational explainer</span>
     </header>
     <div class="log" id="log">
-      <div class="msg bot">I'm your guide to open-heart surgery. Ask why a step is done, what a term means, what can go wrong, or how recovery goes. I'll keep track of which phase you're viewing.</div>
+      <div class="msg bot" data-i18n="chatIntro">I'm your guide to open-heart surgery. Ask why a step is done, what a term means, what can go wrong, or how recovery goes. I'll keep track of which phase you're viewing.</div>
     </div>
     <form id="form">
       <textarea id="q" rows="1" placeholder="e.g. Why is the heart stopped during grafting?" aria-label="Your question"></textarea>
-      <button class="btn primary" id="send" type="submit">Ask</button>
+      <button class="btn primary" id="send" type="submit" data-i18n="ask">Ask</button>
     </form>
   </section>
 
-  <p class="foot">For learning only. Open-heart surgery is performed by a cardiac surgeon, anesthesiologist, perfusionist and nursing team after years of supervised training. Figures shown are typical textbook ranges and vary by institution and patient. If you are facing heart surgery, your surgical team is the right source for your own case.</p>
+  <p class="foot" data-i18n="foot">For learning only. Open-heart surgery is performed by a cardiac surgeon, anesthesiologist, perfusionist and nursing team after years of supervised training. Figures shown are typical textbook ranges and vary by institution and patient. If you are facing heart surgery, your surgical team is the right source for your own case.</p>
 </div>
 
 <script>
@@ -249,13 +257,144 @@ const PHASES=[
   ask:["Why is AFib so common after surgery?","What are sternal precautions?"]}
 ];
 
+const JA=[
+ {g:"術前",t:"検査と治療方針の決定",time:"手術の数日〜数週間前",
+  lead:"手術が最適な治療か、そして患者さんが手術に耐えられるかをチームで確認します。",
+  steps:["冠動脈造影で、どの血管が詰まっているか、グラフトをつなぐ標的がどこかを調べます。","心エコーで心臓のポンプ機能（駆出率）と弁の状態を確認します。","ハートチーム（心臓外科医と循環器内科医）が冠動脈バイパス術とステント治療を比較検討します。多枝病変や左主幹部病変では、一般にバイパス術が選ばれます。","STSスコアやEuroSCORE IIで手術リスクを評価します。","抗血小板薬を調整します。クロピドグレルやチカグレロルは通常約5日前に中止し、アスピリンは継続することが多いです。"],
+  who:["循環器内科医","心臓血管外科医","麻酔科術前外来"],
+  nums:[["CABGの一般的な死亡率","約1〜3%"],["チカグレロル休薬","3〜5日"],["クロピドグレル休薬","5日"]],
+  watch:"頸動脈病変、腎機能、肺機能は脳卒中や合併症の予測因子となるため、事前に検査します。",
+  ask:["なぜステントではなくバイパス手術を選ぶの？","STSスコアは何を評価するの？"]},
+ {g:"術前",t:"同意と術前準備",time:"手術当日",
+  lead:"患者さんの準備を整え、手術部位を確認し、チーム全員で安全確認（タイムアウト）を行います。",
+  steps:["インフォームド・コンセントで、利点、リスク（出血・脳卒中・感染・不整脈・死亡）、代わりの治療法を説明します。","クロルヘキシジンで皮膚を消毒し、体毛は剃刀ではなくクリッパーで処理します。","切開前60分以内に予防的抗菌薬（通常はセファゾリン）を静注します。","血液型検査と交差適合試験を行い、輸血を準備します。","WHO手術安全チェックリストとチームでのタイムアウトを実施します。"],
+  who:["術前看護師","外科医","麻酔科医"],
+  nums:[["抗菌薬投与","切開前60分以内"],["セファゾリン","2 g 静注（120 kg以上は3 g）"]],
+  watch:"周術期の血糖管理は、胸骨の創部感染のリスクを下げます。",
+  ask:["タイムアウトでは何をするの？","なぜ剃らずにクリッパーを使うの？"]},
+ {g:"手術室",t:"麻酔とライン確保",time:"約45分",
+  lead:"患者さんを眠らせ、手術全体を支えるモニターを装着します。",
+  steps:["橈骨動脈に動脈ラインを入れ、1拍ごとの血圧を測ります。","全身麻酔を導入し、気管挿管します。","内頸静脈に中心静脈カテーテルを入れます。肺動脈カテーテルを使うこともあります。","経食道心エコー（TEE）のプローブを入れ、心臓をリアルタイムで観察します。","尿道カテーテルと体温プローブを挿入します。"],
+  who:["心臓麻酔科医","麻酔科スタッフ"],
+  nums:[["動脈ライン","橈骨動脈、導入前に留置"],["TEE","術前の心機能と弁を評価"]],
+  watch:"心機能が弱い患者さんでは麻酔導入で血圧が急に下がることがあるため、薬はゆっくり投与し、昇圧薬を準備しておきます。",
+  ask:["手術中、TEEで何がわかるの？","なぜ眠る前に動脈ラインを入れるの？"]},
+ {g:"手術室",t:"胸骨正中切開",time:"約15分",
+  lead:"胸骨を縦にまっすぐ切り開き、心臓を露出します。",
+  steps:["胸骨上切痕のすぐ下から剣状突起付近まで皮膚を切開します。","電気メスで胸骨の正中に印をつけます。","肺を一時的にしぼませ、胸骨鋸で骨を切ります。","骨の切り口を止血し、開胸器で胸を広げます。","心膜（心臓を包む袋）を切開し、吊り上げて心臓の受け皿にします。"],
+  who:["外科医","第一助手","器械出し看護師"],
+  nums:[["切開の長さ","約20〜25 cm"],["換気","鋸を使う間は一時停止"]],
+  watch:"再手術では心臓が胸骨の裏に癒着していることがあるため、振動鋸と慎重な剥離を用います。",
+  ask:["なぜ鋸を使うときに肺をしぼませるの？","胸骨はどうやって治るの？"]},
+ {g:"手術室",t:"グラフトの採取",time:"約30〜45分",
+  lead:"バイパスに使う血管を採取します。多くは開胸と並行して行います。",
+  steps:["左内胸動脈（LITA）を胸壁の内側から剥離します。根元はつないだままにします。","助手が脚から大伏在静脈を採取します。内視鏡を使うことも多いです。","追加の動脈グラフトとして橈骨動脈を使う外科医もいます。","側枝をクリップで留め、グラフトを洗浄して漏れがないか確認します。","攣縮（スパズム）を防ぐため、LITAをパパベリンを浸したガーゼで包みます。"],
+  who:["外科医（LITA）","助手（静脈）"],
+  nums:[["LITA→LAD 10年開存率","約90%以上"],["静脈グラフト 10年開存率","約50〜60%"]],
+  watch:"LITAを左前下行枝（LAD）につなぐグラフトは、長期生存にとって最も重要な1本です。",
+  ask:["LITAグラフトはなぜ長持ちするの？","大伏在静脈を取っても大丈夫？"]},
+ {g:"手術室",t:"ヘパリン投与とカニュレーション",time:"約15分",
+  lead:"血液を固まらないようにし、機械が循環を引き継げるよう管を入れます。",
+  steps:["ヘパリンを全量投与し、活性化凝固時間（ACT）を確認します。","上行大動脈と右心房に巾着縫合をかけます。","送血管を大動脈に挿入します（ここから血液が体に戻ります）。","脱血管を右心房に入れ、血液を機械へ導きます。","大動脈基部に心筋保護液のラインを入れます。冠静脈洞に逆行性のラインを入れることもあります。"],
+  who:["外科医","臨床工学技士","麻酔科医"],
+  nums:[["ヘパリン","300〜400 単位/kg"],["目標ACT","480秒超"]],
+  watch:"大動脈表面エコーで大動脈の石灰化を確認します。病変のある大動脈にカニューレを入れると、破片が飛んで脳卒中の原因になることがあるためです。",
+  ask:["ACTの数値は何を意味するの？","なぜ大動脈にカニューレを入れるの？"]},
+ {g:"人工心肺中",t:"人工心肺の開始",time:"数分",
+  lead:"人工心肺装置が血液の循環と呼吸を引き継ぎます。",
+  steps:["臨床工学技士が脱血ラインを開き、血液が落差でリザーバーへ流れます。","人工肺が酸素を加え、二酸化炭素を除き、温度を調節します。","ローラーポンプまたは遠心ポンプで血液を大動脈へ戻します。","完全な流量に達したら人工呼吸器を止めます。","軽い低体温へ冷却を始めます。"],
+  who:["臨床工学技士","外科医","麻酔科医"],
+  nums:[["灌流量","2.2〜2.4 L/分/m²"],["人工心肺中の平均血圧","50〜80 mmHg"],["体温","32〜34 °C"]],
+  watch:"完全体外循環になると拍動のある圧が消え、流量は保たれたまま動脈圧の波形が平らになります。",
+  ask:["人工肺はどうやって働くの？","なぜ体温を下げるの？"]},
+ {g:"人工心肺中",t:"大動脈遮断と心停止",time:"約2分",
+  lead:"大動脈を遮断して心臓を止め、動かず血の出ない状態で縫えるようにします。",
+  steps:["送血管と冠動脈の間で、大動脈を遮断鉗子で挟みます。","冷たい高カリウムの心筋保護液を大動脈基部から注入します。","約1分で心臓は拡張期で止まり、心電図は平らになります。","心臓の表面を冷たい生理食塩水やシャーベット状の氷で冷やすこともあります。","心筋保護液は15〜20分ごとに追加します（デル・ニド液なら1回の投与）。"],
+  who:["外科医","臨床工学技士"],
+  nums:[["血液：晶質液の比","一般に4：1"],["追加投与の間隔","15〜20分"],["デル・ニド液","1回で約60〜90分"]],
+  watch:"大動脈遮断時間は厳密に記録します。虚血時間が長いほど、術後に心機能が低下するリスクが高まります。",
+  ask:["カリウムでなぜ心臓が止まるの？","大動脈遮断時間とは？"]},
+ {g:"人工心肺中",t:"グラフトの吻合",time:"約45〜75分",
+  lead:"詰まった部分の先に各グラフトを縫いつけます。末梢側を先に縫い、LITAは最後です。",
+  steps:["標的の冠動脈を見つけ、小さく切開します（約4〜6 mm）。","ルーペで拡大しながら、細いポリプロピレン糸（7-0または8-0）の連続縫合で静脈グラフトを端側吻合します。","残りの末梢側吻合を行います。通常は右冠動脈や回旋枝の領域から始めます。","心臓を持ち上げる間に傷つけないよう、LITAと左前下行枝の吻合は最後に行います。","静脈グラフトの中枢側を大動脈につなぎます。大動脈遮断中か、部分遮断鉗子を使って行います。"],
+  who:["外科医","第一助手"],
+  nums:[["縫合糸","7-0 / 8-0 ポリプロピレン"],["拡大","2.5〜4.5倍のルーペ"]],
+  watch:"手術室を出る前に、各グラフトの血流をトランジットタイム血流計などで確認します。",
+  ask:["なぜLITAを最後に縫うの？","吻合とは何？"]},
+ {g:"人工心肺離脱",t:"復温と空気抜き",time:"約15分",
+  lead:"心臓に再び血液を流し、温め、空気を抜いてから働かせます。",
+  steps:["臨床工学技士が安全な温度差を守りながら血液を温めます。","麻酔科医が肺を膨らませる間に、心臓と大動脈基部から空気を抜きます。","大動脈遮断を解除し、温かい血液が冠動脈へ流れ込みます。","心臓はしばしば細動を起こし、その後自然に、または心臓への直接の電気ショックでリズムを取り戻します。","心臓の表面に一時ペーシングワイヤーを縫いつけます。"],
+  who:["臨床工学技士","外科医","麻酔科医（TEE）"],
+  nums:[["目標体温","約36〜37 °C"],["直接通電","10〜20 J"]],
+  watch:"残った空気は脳や冠動脈に飛ぶ恐れがあるため、TEEで空気が残っていないことを確認します。",
+  ask:["遮断解除後になぜ心臓が細動するの？","ペーシングワイヤーは何のため？"]},
+ {g:"人工心肺離脱",t:"人工心肺からの離脱",time:"約10分",
+  lead:"機械の流量を少しずつ下げながら、心臓が循環の仕事を取り戻します。",
+  steps:["換気を再開し、チェックリストで体温・リズム・検査値・カルシウムを確認します。","臨床工学技士が脱血ラインを部分的に絞り、心臓に血液を満たして送り出させます。","血圧とTEEを見ながら流量を段階的に下げます。","必要に応じて強心薬（アドレナリン、ミルリノンなど）や昇圧薬を加えます。","離脱完了：ポンプを停止します。"],
+  who:["麻酔科医","臨床工学技士","外科医"],
+  nums:[["ペーシング心拍数","一般に80〜90 bpm"],["離脱前のヘモグロビン","約8 g/dL以上"]],
+  watch:"離脱できない場合は人工心肺に戻り、大動脈内バルーンパンピング（IABP）やECMOを検討します。",
+  ask:["心臓が仕事を取り戻せないときは？","強心薬とは何？"]},
+ {g:"人工心肺離脱",t:"プロタミンとカニューレ抜去",time:"約15分",
+  lead:"ヘパリンの効果を打ち消し、管を抜きます。",
+  steps:["まず脱血管を抜きます。","プロタミンをゆっくり投与してヘパリンを中和し、ACTを元の値に戻します。","回路に残った血液を送血管から体に戻します。","送血管を抜き、巾着縫合を結びます。","セルセーバーで回収した血液を処理して体に戻します。"],
+  who:["麻酔科医","外科医","臨床工学技士"],
+  nums:[["プロタミン","ヘパリン100単位あたり約1 mg"],["目標","ACTが術前の値に戻る"]],
+  watch:"プロタミンは低血圧や、まれに肺の血管が収縮する重い反応を起こすことがあるため、ゆっくり投与します。",
+  ask:["プロタミンはどうやってヘパリンを中和するの？","セルセーバーとは？"]},
+ {g:"人工心肺離脱",t:"止血と閉胸",time:"約30〜45分",
+  lead:"出血している箇所をすべて止め、胸を閉じます。",
+  steps:["グラフトの吻合部、カニューレの挿入部、LITAの採取部に出血がないか確認します。","縦隔と、開いた胸腔にドレーンを入れます。","6〜8本のステンレスワイヤーで胸骨を固定します。","筋膜、皮下組織、皮膚を層ごとに縫合します。","ガーゼ、針、器械の最終カウントを行います。"],
+  who:["外科医","器械出し看護師","外回り看護師"],
+  nums:[["胸骨ワイヤー","6〜8本"],["ドレーン","通常2〜3本"]],
+  watch:"術後に1時間あたり約200 mLを超える出血が数時間続く場合は、再び開胸して止血することがあります。",
+  ask:["なぜステンレスワイヤーを使うの？","ドレーンは何を排出するの？"]},
+ {g:"術後",t:"ICUと回復",time:"数日〜数週間",
+  lead:"患者さんが目を覚まし、自分で呼吸し、回復を始めます。",
+  steps:["挿管したままICUへ移動し、通常6時間以内に抜管します。","ドレーンの排液量、心臓のリズム、腎機能、痛みを観察します。","翌日にはベッドから起き、1〜2日で歩き始めます。","2〜3日目にドレーンとペーシングワイヤーを抜きます。","4〜6日目ごろに退院し、約6〜8週間は胸骨を守るための制限を守ります。その後、心臓リハビリテーションを行います。"],
+  who:["ICUチーム","病棟看護師","理学療法士","心臓リハビリ"],
+  nums:[["入院期間","約5〜7日"],["術後の心房細動","約20〜40%"],["持ち上げ制限","6〜8週間は約2〜4 kgまで"]],
+  watch:"最も多い合併症は心房細動で、通常2〜3日目に起こり、多くは一時的です。",
+  ask:["なぜ術後に心房細動が多いの？","胸骨を守るための制限とは？"]}
+];
+const STR={
+ en:{eyebrow:"Case walkthrough · CABG ×3 on cardiopulmonary bypass",title:"Open Heart Walkthrough",
+  intro:"A start-to-finish guide to coronary artery bypass grafting, the most common open-heart operation. Step through each phase, from the first scan to going home.",
+  heart:"Heart:",bypass:"Bypass:",phaseOf:(n,t)=>`Phase ${n} of ${t}`,
+  state:{beating:"beating",arrested:"arrested",fibrillating:"fibrillating",on:"on",off:"off",weaning:"weaning"},
+  pause:"Pause trace",play:"Play trace",keyNums:"Key numbers",watch:"Watch for.",prev:"← Previous",next:"Next phase →",
+  chatTitle:"Ask the surgical bot",chatStatus:"Educational explainer",
+  chatIntro:"I'm your guide to open-heart surgery. Ask why a step is done, what a term means, what can go wrong, or how recovery goes. I'll keep track of which phase you're viewing.",
+  placeholder:"e.g. Why is the heart stopped during grafting?",ask:"Ask",qLabel:"Your question",thinking:"Thinking…",
+  errDenied:"Chat permission was declined, so the bot can't answer. You can allow it from this page's Permissions menu.",
+  errRate:"Too many questions in a short time. Wait a minute and ask again.",errGeneric:"The answer didn't come through. Try asking again.",
+  foot:"For learning only. Open-heart surgery is performed by a cardiac surgeon, anesthesiologist, perfusionist and nursing team after years of supervised training. Figures shown are typical textbook ranges and vary by institution and patient. If you are facing heart surgery, your surgical team is the right source for your own case.",
+  phases:"Phases",monitor:"Case monitor",chat:"Ask the bot",language:"Language"},
+ ja:{eyebrow:"症例ウォークスルー · 人工心肺下の冠動脈バイパス術（3枝）",title:"開心術ウォークスルー",
+  intro:"最も一般的な開心術である冠動脈バイパス術（CABG）を、最初から最後まで解説します。最初の検査から退院まで、各段階を順に見ていきましょう。",
+  heart:"心臓:",bypass:"人工心肺:",phaseOf:(n,t)=>`フェーズ ${n} / ${t}`,
+  state:{beating:"拍動中",arrested:"停止中",fibrillating:"細動中",on:"稼働中",off:"停止",weaning:"離脱中"},
+  pause:"波形を停止",play:"波形を再生",keyNums:"主な数値",watch:"注意点。",prev:"← 前へ",next:"次のフェーズ →",
+  chatTitle:"手術ボットに質問",chatStatus:"学習用の解説",
+  chatIntro:"開心術のガイドです。各ステップを行う理由、用語の意味、起こりうる合併症、回復の流れなど、何でも質問してください。表示中のフェーズに合わせて答えます。",
+  placeholder:"例：なぜグラフトを縫う間は心臓を止めるの？",ask:"質問",qLabel:"質問を入力",thinking:"考え中…",
+  errDenied:"チャットの許可が拒否されたため、ボットは回答できません。このページの「権限」メニューから許可できます。",
+  errRate:"短時間に質問が多すぎます。1分ほど待ってから、もう一度質問してください。",errGeneric:"回答を受け取れませんでした。もう一度質問してください。",
+  foot:"学習用です。開心術は、長年の指導下での訓練を経た心臓血管外科医、麻酔科医、臨床工学技士、看護師のチームが行います。表示している数値は一般的な教科書上の目安で、施設や患者さんによって異なります。ご自身が心臓手術を受ける場合は、担当の手術チームにご相談ください。",
+  phases:"フェーズ",monitor:"症例モニター",chat:"ボットに質問",language:"言語"}
+};
+let lang="en";
+try{const s=localStorage.getItem("ohw-lang");if(s==="en"||s==="ja")lang=s;else if((navigator.language||"").toLowerCase().startsWith("ja"))lang="ja"}catch(e){}
+const L=()=>STR[lang];
+const P=i=>lang==="ja"?{...PHASES[i],...JA[i]}:PHASES[i];
+
 let cur=0,sample=null;
 const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
 function renderRail(){
   let g="",h="";
-  PHASES.forEach((p,i)=>{
+  PHASES.forEach((_,i)=>{const p=P(i);
     if(p.g!==g){g=p.g;h+=`<div class="group">${esc(g)}</div>`}
     h+=`<button type="button" data-i="${i}" ${i===cur?'aria-current="step"':''}><span class="n">${String(i+1).padStart(2,"0")}</span><span class="t">${esc(p.t)}</span></button>`;
   });
@@ -263,36 +402,49 @@ function renderRail(){
   $("rail").querySelectorAll("button").forEach(b=>b.onclick=()=>go(+b.dataset.i));
 }
 function renderSheet(){
-  const p=PHASES[cur];
+  const p=P(cur),s=L();
   $("sheet").innerHTML=`
-   <div class="eyebrow">Phase ${cur+1} of ${PHASES.length} · ${esc(p.g)}</div>
+   <div class="eyebrow">${esc(s.phaseOf(cur+1,PHASES.length))} · ${esc(p.g)}</div>
    <h2>${esc(p.t)}</h2>
    <div class="meta"><span class="chip time">${esc(p.time)}</span>${p.who.map(w=>`<span class="chip">${esc(w)}</span>`).join("")}</div>
    <p class="lead">${esc(p.lead)}</p>
    <div class="cols">
      <ol class="steps">${p.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
      <div class="side">
-       <div class="box"><h3>Key numbers</h3><dl class="num">${p.nums.map(n=>`<div><dt>${esc(n[0])}</dt><dd>${esc(n[1])}</dd></div>`).join("")}</dl></div>
-       <div class="watch"><strong>Watch for.</strong> ${esc(p.watch)}</div>
+       <div class="box"><h3>${esc(s.keyNums)}</h3><dl class="num">${p.nums.map(n=>`<div><dt>${esc(n[0])}</dt><dd>${esc(n[1])}</dd></div>`).join("")}</dl></div>
+       <div class="watch"><strong>${esc(s.watch)}</strong> ${esc(p.watch)}</div>
      </div>
    </div>
    <div class="askthis" ${sample?"":"hidden"}>${p.ask.map(a=>`<button type="button">${esc(a)}</button>`).join("")}</div>
    <div class="nav">
-     <button class="btn" id="prev" ${cur===0?"disabled":""}>← Previous</button>
-     <button class="btn primary" id="next" ${cur===PHASES.length-1?"disabled":""}>Next phase →</button>
+     <button class="btn" id="prev" ${cur===0?"disabled":""}>${esc(s.prev)}</button>
+     <button class="btn primary" id="next" ${cur===PHASES.length-1?"disabled":""}>${esc(s.next)}</button>
    </div>`;
   $("prev").onclick=()=>go(cur-1);$("next").onclick=()=>go(cur+1);
   $("sheet").querySelectorAll(".askthis button").forEach(b=>b.onclick=()=>{$("q").value=b.textContent;$("q").focus();ask()});
   $("vHR").textContent=p.heart==="beating"?p.v[0]:"---";
   $("vBP").textContent=p.v[1];$("vT").textContent=p.v[2];
-  $("sHeart").textContent=p.heart;$("sCPB").textContent=p.cpb;$("sPhase").textContent=cur+1;
+  $("sHeart").textContent=s.state[p.heart];$("sCPB").textContent=s.state[p.cpb];$("sPhase").textContent=s.phaseOf(cur+1,PHASES.length);
 }
+function applyLang(){
+  const s=L();document.documentElement.lang=lang;
+  document.querySelectorAll("[data-i18n]").forEach(el=>{const v=s[el.dataset.i18n];if(typeof v==="string")el.textContent=v});
+  $("q").placeholder=s.placeholder;$("q").setAttribute("aria-label",s.qLabel);
+  $("rail").setAttribute("aria-label",s.phases);$("monitor").setAttribute("aria-label",s.monitor);
+  $("chat").setAttribute("aria-label",s.chat);$("langGroup").setAttribute("aria-label",s.language);
+  $("langGroup").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===lang));
+  const t=$("ecgToggle");if(t)t.textContent=running?s.pause:s.play;
+  renderRail();renderSheet();
+}
+function setLang(l){if(l===lang)return;lang=l;try{localStorage.setItem("ohw-lang",l)}catch(e){}applyLang()}
+$("langGroup").querySelectorAll("button").forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
 function go(i){if(i<0||i>=PHASES.length)return;cur=i;renderRail();renderSheet();try{localStorage.setItem("ohw-phase",i)}catch(e){}}
 try{const s=+localStorage.getItem("ohw-phase");if(s>=0&&s<PHASES.length)cur=s}catch(e){}
-renderRail();renderSheet();
+let running=false,raf=0;
+applyLang();
 
 /* ECG */
-const cv=$("ecg"),cx=cv.getContext("2d");let x=0,lastY=null,t0=0,running=false,raf=0;
+const cv=$("ecg"),cx=cv.getContext("2d");let x=0,lastY=null,t0=0;
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 function size(){const r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);x=0;lastY=null}
 function beat(ph){ // ph 0..1 within a cardiac cycle
@@ -320,7 +472,7 @@ function draw(ts){
   }
   if(running)raf=requestAnimationFrame(draw);
 }
-function setRun(on){running=on;cancelAnimationFrame(raf);t0=0;const b=$("ecgToggle");b.textContent=on?"Pause trace":"Play trace";b.setAttribute("aria-pressed",on);if(on)raf=requestAnimationFrame(ts=>{t0=ts;draw(ts)});else still()}
+function setRun(on){running=on;cancelAnimationFrame(raf);t0=0;const b=$("ecgToggle");b.textContent=on?L().pause:L().play;b.setAttribute("aria-pressed",on);if(on)raf=requestAnimationFrame(ts=>{t0=ts;draw(ts)});else still()}
 $("ecgToggle").onclick=()=>setRun(!running);
 function still(){const w=cv.clientWidth,h=cv.clientHeight;cx.clearRect(0,0,w,h);cx.strokeStyle="#3ee08f";cx.lineWidth=1.6;cx.beginPath();for(let i=0;i<w;i++){const y=h*.62-beat((i/140)%1)*h*.5;i?cx.lineTo(i,y):cx.moveTo(i,y)}cx.stroke()}
 size();new ResizeObserver(()=>{size();if(!running)still()}).observe(cv);
@@ -336,17 +488,18 @@ async function ask(){
   const q=$("q").value.trim();if(!q||busy)return;
   if(!sample){add("err","The chat needs the Claude viewer to answer questions. Open this page on claude.ai to use it. The phase guide above works everywhere.");return}
   busy=true;$("send").disabled=true;$("q").value="";add("me",q);
-  const p=PHASES[cur];
-  const ctx=`[Viewer is on phase ${cur+1}/${PHASES.length}: "${p.t}". Phase summary: ${p.lead} Steps: ${p.steps.join(" ")}]\n\n`;
+  const p=P(cur),s=L();
+  const langNote=lang==="ja"?" The viewer has the page set to Japanese: reply in natural Japanese, using standard Japanese medical terms (e.g. 人工心肺, 心筋保護液, 左内胸動脈).":" Reply in English unless the viewer writes in another language.";
+  const ctx=`[Viewer is on phase ${cur+1}/${PHASES.length}: "${p.t}". Phase summary: ${p.lead} Steps: ${p.steps.join(" ")}]${langNote}\n\n`;
   const msgs=[{role:"user",content:SYS+"\n\nReply 'Ready.'"},{role:"assistant",content:"Ready."},...history,{role:"user",content:ctx+q}];
-  const bubble=add("bot","Thinking…");
+  const bubble=add("bot",s.thinking);
   try{
     const r=await sample(msgs,{cache:false,onText:({text})=>{bubble.textContent=text;$("log").scrollTop=$("log").scrollHeight}});
     bubble.textContent=r.text;history.push({role:"user",content:ctx+q},{role:"assistant",content:r.text});
     if(history.length>16)history.splice(0,2);
   }catch(e){
     bubble.className="msg err";
-    bubble.textContent=e?.code==="not_granted"?"Chat permission was declined, so the bot can't answer. You can allow it from this page's Permissions menu.":e?.code==="rate_limited"?"Too many questions in a short time. Wait a minute and ask again.":"The answer didn't come through. Try asking again.";
+    bubble.textContent=e?.code==="not_granted"?s.errDenied:e?.code==="rate_limited"?s.errRate:s.errGeneric;
   }finally{busy=false;$("send").disabled=false}
 }
 $("form").addEventListener("submit",e=>{e.preventDefault();ask()});

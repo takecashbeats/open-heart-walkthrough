@@ -5,6 +5,7 @@ An interactive, start-to-finish guide to coronary artery bypass grafting (CABG),
 - 14 phases, from work-up through anesthesia, sternotomy, cardiopulmonary bypass, grafting, weaning, closure and ICU recovery
 - Each phase has ordered steps, who does them, key numbers and what to watch for
 - A live monitor strip whose ECG and vitals follow the phase (flat while the heart is arrested)
+- English / 日本語 switch at the top of the monitor; the choice is remembered, and Japanese browsers open in Japanese
 
 ## Run it
 
